@@ -78,7 +78,9 @@
             -webkit-appearance: none;
             appearance: none;
         }
-        input:focus,
+        input:focus {
+            outline: gray 1.5px solid;
+        }        
         input:active {
             outline: none;
         }
@@ -196,21 +198,23 @@
 
             <div class="history">
                 <p class="history-title">
-                    Previous
+                    Previous scores:
                 </p>
 
                 <ul class="history-list">
                 </ul>
 
-                <input type="submit" value="Reset" id="reset" class="additional active" tabindex="-1">
+                <input type="submit" value="Reset" id="reset" class="additional dis" tabindex="-1" disabled="true">
             </div>
         </div>
     </div>
 
     <script type="text/javascript">
     
+// Generate the initial correct number
 let num = Math.ceil(Math.random() * 100);
 
+// Set up the variables
 const ornt = document.querySelector('.orientation');
 const guss = document.querySelector('.guesses');
 const rslt = document.querySelector('.result');
@@ -230,15 +234,22 @@ let point = 0;
 let notice;
 
 
-subm.addEventListener('click', check, false);
-rest.addEventListener('click', reset, false);
+// Set up the initial event listeners
+subm.addEventListener('click', check);
+inpt.addEventListener('keydown', (event)=> {
+    if (event.code === 'Enter') {
+        check();
+    }
+});
 
 
 function restart() {
+    // Game is restarted
+
     num = Math.ceil(Math.random() * 100);
 
-    subm.addEventListener('click', check);
-    rstr.removeEventListener('click', restart);
+    activate(subm, check);
+    disable(rstr, restart);
 
     notice = ' Cancel';
 
@@ -252,26 +263,24 @@ function restart() {
     inpt.value = '';
     inpt.focus();
     ornt.textContent = 'Started a new game';
-    subm.className = 'sub-inp active';
     guss.innerHTML = '&nbsp;';
     rslt.textContent = '';
-    rstr.className = 'additional dis';
     scor.innerHTML = '';
 }
 
 
 function check() {
+    // User input is evaluated
 
     if (inpt.value.length == 0) {
         ornt.textContent = 'Type a number';
         inpt.focus();
+
     } else {
 
         if (turn == 0) {
             guss.textContent = 'Your guesses:';
-            rstr.className = 'additional active';
-
-            rstr.addEventListener('click', restart);
+            activate(rstr, restart);
         } 
 
         let val = Number(inpt.value);
@@ -282,12 +291,15 @@ function check() {
         turn++;
 
         if (val === num) {
+            // Game is won
+
             rslt.textContent = 'Congratulations! You have won!';
             rslt.style.backgroundColor = 'limegreen';
 
             game = true;
             notice = ' Win';
             point = 100 - (turn - 1) * 10;
+
         } else if (turn < 10) {
 
             if (isNaN(val)) {
@@ -306,6 +318,8 @@ function check() {
             }
 
         } else {
+            // Game is lost
+            
             rslt.textContent = 'You have lost!';
             rslt.style.backgroundColor = 'crimson';
 
@@ -317,14 +331,16 @@ function check() {
         guss.textContent += ' ' + val;
         
         if (game) {
-            subm.removeEventListener('click', check);
+            // Game is finished and score is shown
+
+            disable(subm, check);
 
             ornt.innerHTML = '&nbsp;';
-            subm.className = 'sub-inp dis';
             scor.innerHTML = `Number: ${num}<br>Your trial count: ${turn}<br>Your point: ${point}`;
 
             game = false;
 
+            // Run the scoreboard function
             board();
             
             turn = 10;
@@ -334,8 +350,15 @@ function check() {
 
 
 function board() {
-    hstt.style.display = 'block';
+    // Scoreboard function
 
+    // Show the scoreboard if not displayed
+    if (getComputedStyle(hstt).display !== 'block') {
+        hstt.style.display = 'block';
+        activate(rest, reset);
+    }
+
+    // Prepare the variables for the score
     let dat = new Date();
     let scoreColor;
     
@@ -356,14 +379,34 @@ function board() {
             break;
     }
 
+    // Add the latest score to the scoreboard with the variables
     hstl.innerHTML += `<li>${scoreColor}<br>${point} point - ${turn} trial<br>${day}.${month}.${dat.getFullYear()} ${dat.getHours()}:${dat.getMinutes()}</li>`;
 }
 
 
 function reset() {
+    // Function to reset the scoreboard
+
     inpt.focus();
     hstl.innerHTML = '';
-    hstt.style.display = 'none';
+    hstt.style.display = 'none';    
+    disable(rest, reset);
+}
+
+// Functions to disable and activate buttons
+function disable(element, func) {
+    element.removeEventListener('click', func);
+    element.setAttribute('disabled', 'true');
+    element.setAttribute('tabindex', '-1');
+    element.classList.remove('active');
+    element.classList.add('dis');
+}
+function activate(element, func) {
+    element.addEventListener('click', func);
+    element.removeAttribute('disabled');
+    element.setAttribute('tabindex', '0');
+    element.classList.remove('dis');
+    element.classList.add('active');
 }
 
     </script>
